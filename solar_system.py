@@ -25,13 +25,29 @@ positions = orbital_radii * np.array([np.cos(angles), np.sin(angles)]).T
 # set up all planets to rotate counterclockwise about the star
 directions = np.cross( np.insert(positions, 2, 0.0, axis=1), np.array([0.0, 0.0, 1.0]), axisa=1)
 directions = directions[:, :2] # recasting back to 2 dimensions
+directions[1:] = directions[1:] / orbital_radii[1:]
 # apply roughly the correct speed given the orbital radius to keep in stable orbit
 velocities = np.zeros((N, 2))
-velocities[1:,:] = np.sqrt( grav_constant *  masses[1:] / orbital_radii[1:]) * directions[1:, :]
+velocities[1:,:] = np.sqrt( grav_constant *  masses[0] / orbital_radii[1:]) * directions[1:, :]
 
 #---------------------------- CALCULATING THE ACCELERATIONS OF THESE BODIES DUE TO GRAVITY ----------------------------#
-disps = positions[:, np.newaxis] - positions
-norm_dists = np.linalg.norm(disps, axis=2)
-inv_cube_dist = np.power(norm_dists, -3, where=(norm_dists!=0.0))[:, :, np.newaxis]
+def accelerate(position, mass):
+    displacement = position[:, np.newaxis] - position
+    distance = np.linalg.norm(displacement, axis=2)
+    inv_cube_dist = np.power(distance, -3, where=(distance!=0.0))[:, :, np.newaxis]
 
-a = - grav_constant * np.sum(inv_cube_dist * np.swapaxes(masses * disps, 0, 1), axis=0)
+    return - grav_constant * np.sum(inv_cube_dist * np.swapaxes(mass * displacement, 0, 1), axis=0)
+
+#---------------------------------------- PERFORMING THE NUMERICAL INTEGRATION ----------------------------------------#
+num_steps = 370
+timespan = 365.25
+time_change = timespan / float(num_steps)
+
+velocities = velocities[:, :, np.newaxis]
+positions = positions[:, :, np.newaxis]
+
+for step in np.arange(1, num_steps, dtype=int):
+    velocity_change = accelerate(positions[:, :, step - 1], masses) * time_change
+    velocities = np.dstack([velocities, velocities[:, :, step - 1] + velocity_change])
+    position_change = velocities[:, :, step] * time_change
+    positions = np.dstack([positions, positions[:, :, step - 1] + position_change])
