@@ -20,15 +20,23 @@ def accelerate(position, mass):
 
     return - grav_constant * np.sum(inv_cube_dist * np.swapaxes(mass * displacement, 0, 1), axis=0)
 #---------------------------------------- PERFORMING THE NUMERICAL INTEGRATION ----------------------------------------#
-num_steps = 370
-timespan = 365.25
+num_steps = 30200
+timespan = 30200.0
 time_change = timespan / float(num_steps)
 
 velocities = velocities[:, :, np.newaxis]
 positions = positions[:, :, np.newaxis]
+
+counter = 0
+percnt = 0
 
 for step in np.arange(1, num_steps, dtype=int):
     velocity_change = accelerate(positions[:, :, step - 1], masses) * time_change
     velocities = np.dstack([velocities, velocities[:, :, step - 1] + velocity_change])
     position_change = velocities[:, :, step] * time_change
     positions = np.dstack([positions, positions[:, :, step - 1] + position_change])
+    counter = counter + 1
+    if (counter >= 3020):
+        counter = 0
+        percnt = percnt + 10
+        print('{}% complete'.format(percnt))
