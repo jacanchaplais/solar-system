@@ -3,7 +3,6 @@
 # https://ssd.jpl.nasa.gov/horizons.cgi?CGISESSID=0be6725975911d33c2020b132ee1a912&s_disp=1#top
 
 import numpy as np
-from scipy.integrate import odeint
 
 au_length, au_mass, au_time = 1.495978707E+11, 1.98892E+30, 8.64E+4 # metres, kilograms, seconds
 grav_constant = 6.67408E-11 * (au_mass * au_time ** 2) / (au_length ** 3)
