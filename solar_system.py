@@ -8,7 +8,7 @@ import pandas as pd
 au_length, au_mass, au_time = 1.495978707E+11, 1.98892E+30, 8.64E+4 # metres, kilograms, seconds
 grav_constant = 6.67408E-11 * (au_mass * au_time ** 2) / (au_length ** 3)
 #--------------------------------------------- READING SOLAR SYSTEM DATA ----------------------------------------------#
-data = pd.read_csv('data.csv', index_col=0)
+data = pd.read_csv('bodies.inp', index_col=0)
 masses = data['Mass'].values[:, np.newaxis]
 positions = data.loc[:, 'X':'Y'].values
 velocities = data.loc[:, 'VX':'VY'].values
