@@ -5,21 +5,27 @@
 import numpy as np
 import pandas as pd
 
-au_length, au_mass, au_time = 1.495978707E+11, 1.98892E+30, 8.64E+4 # metres, kilograms, seconds
+au_length, au_mass, au_time = 1.495978707E+11, 1.98892E+30, 8.64E+4  # metres, kilograms, seconds
 grav_constant = 6.67408E-11 * (au_mass * au_time ** 2) / (au_length ** 3)
-#--------------------------------------------- READING SOLAR SYSTEM DATA ----------------------------------------------#
+
+
+# -------------------------------------------- READING SOLAR SYSTEM DATA --------------------------------------------- #
 data = pd.read_csv('bodies.inp', index_col=0)
 masses = data['Mass'].values[:, np.newaxis]
 positions = data.loc[:, 'X':'Y'].values
 velocities = data.loc[:, 'VX':'VY'].values
-#---------------------------- CALCULATING THE ACCELERATIONS OF THESE BODIES DUE TO GRAVITY ----------------------------#
+
+
+# --------------------------- CALCULATING THE ACCELERATIONS OF THESE BODIES DUE TO GRAVITY --------------------------- #
 def accelerate(position, mass):
     displacement = position[:, np.newaxis] - position
     distance = np.linalg.norm(displacement, axis=2)
-    inv_cube_dist = np.power(distance, -3, where=(distance!=0.0))[:, :, np.newaxis]
+    inv_cube_dist = np.power(distance, -3, where=(distance != 0.0))[:, :, np.newaxis]
 
     return - grav_constant * np.sum(inv_cube_dist * np.swapaxes(mass * displacement, 0, 1), axis=0)
-#---------------------------------------- PERFORMING THE NUMERICAL INTEGRATION ----------------------------------------#
+
+
+# --------------------------------------- PERFORMING THE NUMERICAL INTEGRATION --------------------------------------- #
 num_steps = 30200
 timespan = 30200.0
 time_change = timespan / float(num_steps)
