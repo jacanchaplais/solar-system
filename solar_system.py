@@ -10,14 +10,23 @@ grav_constant = 6.67408E-11 * (au_mass * au_time ** 2) / (au_length ** 3)
 
 
 # -------------------------------------------- READING SOLAR SYSTEM DATA --------------------------------------------- #
-data = pd.read_csv('bodies.inp', index_col=0)
-masses = data['Mass'].values[:, np.newaxis]
-positions = data.loc[:, 'X':'Y'].values
-velocities = data.loc[:, 'VX':'VY'].values
+data = pd.read_csv('bodies.inp', index_col=[0,1], parse_dates=True)
+
+data.index.set_levels(data.index.levels[0][data.index.codes[0]], level='Name', inplace=True)
+data.index.set_codes(np.sort(data.index.codes[0]), level='Name', inplace=True)
+
+trajectory = data.drop(columns=['Mass','Z', 'VZ'])
 
 
 # --------------------------- CALCULATING THE ACCELERATIONS OF THESE BODIES DUE TO GRAVITY --------------------------- #
 def accelerate(position, mass):
+    """Calculates the cumulative Newtonian gravitational acceleration exerted on every body within the system.
+    
+    Keyword arguments:
+    position -- 
+    mass --
+    """
+    mass = mass[:, np.newaxis]
     displacement = position[:, np.newaxis] - position
     distance = np.linalg.norm(displacement, axis=2)
     inv_cube_dist = np.power(distance, -3, where=(distance != 0.0))[:, :, np.newaxis]
@@ -30,19 +39,37 @@ num_steps = 30200
 timespan = 30200.0
 time_change = timespan / float(num_steps)
 
-velocities = velocities[:, :, np.newaxis]
-positions = positions[:, :, np.newaxis]
-
 counter = 0
 percnt = 0
 
+idx = pd.IndexSlice
+start_date = trajectory.index.levels[1]
+date_delta = pd.to_timedelta(time_change, 'D')
+
+cur_traj = trajectory.copy()
+cur_date = start_date
+
 for step in np.arange(1, num_steps, dtype=int):
-    velocity_change = accelerate(positions[:, :, step - 1], masses) * time_change
-    velocities = np.dstack([velocities, velocities[:, :, step - 1] + velocity_change])
-    position_change = velocities[:, :, step] * time_change
-    positions = np.dstack([positions, positions[:, :, step - 1] + position_change])
+    cur_date = cur_date + date_delta
+    
+    # update the entry to the current date in this iteration:
+    cur_traj.index.set_levels(cur_date, level=1, inplace=True)
+    
+    velocity = cur_traj.loc[idx[:, cur_date], ['VX','VY']]
+    position = cur_traj.loc[idx[:, cur_date], ['X','Y']]
+    
+    new_velocity = velocity + accelerate(position.values, data['Mass'].values) * time_change
+    new_position = position + new_velocity.values * time_change
+    
+    cur_traj.loc[idx[:, cur_date], ['VX','VY']] = new_velocity
+    cur_traj.loc[idx[:, cur_date], ['X','Y']] = new_position
+    
+    trajectory = trajectory.append(cur_traj)
+    
     counter = counter + 1
-    if (counter >= 3020):
+    if (counter >= 302):
         counter = 0
-        percnt = percnt + 10
+        percnt = percnt + 1
         print('{}% complete'.format(percnt))
+        
+trajectory.sort_index()
