@@ -7,6 +7,7 @@ The data collected from NASA is stored in the bodies.inp file as a CSV, and cont
 The output is formatted Pandas DataFrames, then stored to CSV in data/traj.out.
 
 ## To do
+- [ ] Automate data collection from Horizon servers
 - [ ] Write visualiser module
 - [ ] Implement periodic file writing to speed up array indexing during recording of data
 - [ ] Use a higher order numerical integration scheme, like RK4
