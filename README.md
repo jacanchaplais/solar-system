@@ -9,3 +9,4 @@ The output is formatted Pandas DataFrames, then stored to CSV in data/traj.out.
 ## To do
 - [ ] Write visualiser module
 - [ ] Implement periodic file writing to speed up array indexing during recording of data
+- [ ] Use a higher order numerical integration scheme, like RK4
