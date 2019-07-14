@@ -13,9 +13,11 @@ grav_constant = 6.67408E-11 * (au_mass * au_time ** 2) / (au_length ** 3)
 
 # -------------------------------------------- READING SOLAR SYSTEM DATA --------------------------------------------- #
 data = pd.read_csv('bodies.inp', index_col=[0,1], parse_dates=True)
-body_order = data.index.levels[0][data.index.codes[0]] # preserve the order of the bodies, for later sorting
-start_date = data.index.levels[1][0] # the first date from the input file
 traj = data.drop(columns=['Mass','Z', 'VZ']) # create a DataFrame in which the calculations will be stored
+
+index = traj.index.copy()
+columns = traj.columns.copy()
+start_date = index.levels[1][0] # the first date from the input file
 
 
 # --------------------------- CALCULATING THE ACCELERATIONS OF THESE BODIES DUE TO GRAVITY --------------------------- #
@@ -36,6 +38,45 @@ def accelerate(position, mass):
 
     return - grav_constant * np.sum(inv_cube_dist * np.swapaxes(mass * displacement, 0, 1), axis=0)
 
+
+# ------------------------------------------------ FORMATTING THE DATA ----------------------------------------------- #
+def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
+    """Takes position and velocity arrays of shape nbod x ndim x nt (bodies, spatial dimensions, time) and returns a
+    DataFrame of the data, sorted column-wise.
+    
+    Keyword arguments:
+    pos_data -- (nbod x ndim x nt array) position data
+    vel_data -- (nbod x ndim x nt array) velocity data
+    index -- Pandas.MultiIndex object for a single date
+    column -- (list / array-like) column headers for the formatted DataFrame
+    num_iter -- (int) number of dates over which the data represents
+    cur_date -- (Pandas.DateTime object) the date at the start of the data
+    
+    Returns:
+    cur_traj -- the formatted DataFrame 
+    """
+    date_range = cur_date + pd.to_timedelta(np.arange(num_iter), 'D') # create a datetime array from start to finish
+
+    body_order = index.levels[0][index.codes[0]]
+
+    index.set_levels(date_range, level=1, inplace=True) # set the dates for our new index
+    index.set_codes([
+        np.tile(index.codes[0], num_iter), # copies mapping of planet name to number for every timestep
+        np.repeat( np.arange(num_iter), len(index.codes[1]) ) # applies the date to the set of planets at each timestep
+    ], verify_integrity=False, inplace=True)
+
+    # reshapes the output data from n x s x t, to (n * t) x s, glueing the time slices as rows, forming long columns
+    pos_data = pos_data.transpose(2,0,1).reshape(pos_data.shape[0] * pos_data.shape[2], pos_data.shape[1])
+    vel_data = vel_data.transpose(2,0,1).reshape(vel_data.shape[0] * vel_data.shape[2], vel_data.shape[1])
+
+    traj_data = np.hstack((pos_data, vel_data)) # position and velocity data in adjacent columns, for the dataframe
+
+    # puts it all together to actually create the dataframe:
+    cur_traj = pd.DataFrame(data=traj_data, index=index, columns=column)
+    cur_traj.sort_index(inplace=True)
+    cur_traj = cur_traj.reindex(body_order, level='Name')
+    
+    return cur_traj
 
 # ------------------------------------------ SETTING UP THE LOOP VARIABLES ------------------------------------------- #
 # define the length of the calculation (in days), and the number of calculation steps to perform:
@@ -68,6 +109,16 @@ mass = data['Mass'].values # get the mass as a 1D array
 
 
 # --------------------------------------- PERFORMING THE NUMERICAL INTEGRATION --------------------------------------- #
+# creates a data/ storage directory, if it does not already exist:
+data_dir = 'data/'
+fpath = data_dir + 'traj.out'
+
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir)
+elif (os.path.isfile(fpath)):
+    os.remove(fpath)
+
+
 for step in range(1, num_steps):
     # apply the euler method of integration to calculate new velocities and positions:
     cur_vel = cur_vel + accelerate(cur_pos, mass) * time_change
@@ -79,43 +130,26 @@ for step in range(1, num_steps):
 
     # update the progress readout:
     cntr = cntr + 1
-    if (cntr >= cntr_change):
-        cntr = 0
+    last_step = step == num_steps - 1
+    if (cntr == cntr_change or last_step):
         pcnt = pcnt + pcnt_change
         sys.stdout.write('\r{}% complete'.format(pcnt))
         sys.stdout.flush()
+        
+        # record all but the last data
+        cur_date = start_date + pd.to_timedelta(step - cntr, 'D')
+        
+        if not last_step:
+            cur_traj = format_data(pos[:, :, :-1], vel[:, :, :-1], index.copy(), columns, cntr_change, cur_date)
+            pos = pos[:, :, -1]
+            vel = vel[:, :, -1]
+        else:
+            cur_traj = format_data(pos, vel, index.copy(), columns, cntr_change, cur_date)
+        
+        file_exists = os.path.isfile(fpath)
+        write_mode = 'a' if file_exists else 'w' # if the storage file exists, append to it
 
+        with open(fpath, write_mode) as f: # save as csv
+            cur_traj.to_csv(f, header=(not file_exists)) # writes out to data file
 
-# ------------------------------------------------ FORMATTING THE DATA ----------------------------------------------- #
-# first, set up the multi-level index for this newly calculated data:
-index = traj.index.copy() # copy the index for one timestep
-date_range = start_date + pd.to_timedelta(np.arange(num_steps), 'D') # create a datetime array from start to finish
-
-index.set_levels(date_range, level=1, inplace=True) # set the dates for our new index
-index.set_codes([
-    np.tile(index.codes[0], num_steps), # copies mapping of planet name to number for every timestep
-    np.repeat( np.arange(num_steps), len(index.codes[1]) ) # applies the date to the set of planets at each timestep
-], verify_integrity=False, inplace=True)
-
-column = traj.columns.copy()
-
-# reshapes the output data from n x s x t, to (n * t) x s, glueing the time slices as rows, forming long columns
-pos = pos.transpose(2,0,1).reshape(pos.shape[0] * pos.shape[2], pos.shape[1])
-vel = vel.transpose(2,0,1).reshape(vel.shape[0] * vel.shape[2], vel.shape[1])
-
-traj_data = np.hstack((pos, vel)) # sticks the position and velocity data in adjacent columns, for the dataframe
-
-# puts it all together to actually create the dataframe:
-traj = pd.DataFrame(data=traj_data, index=index, columns=column)
-traj.sort_index(inplace=True)
-traj = traj.reindex(body_order, level='Name')
-
-del traj_data, pos, vel, cur_pos, cur_vel, date_range # cleaning up some data
-
-# creates a data/ storage directory, if it does not already exist:
-data_dir = 'data/'
-if not os.path.exists(data_dir):
-    os.makedirs(data_dir)
-
-with open(data_dir + 'traj.out', 'w') as f: # save as csv
-    traj.to_csv(f) # writes out to data file
+        cntr = 0
