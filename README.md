@@ -8,6 +8,7 @@ The output is formatted Pandas DataFrames, then stored to CSV in data/traj.out.
 
 ## To do
 - [x] Implement periodic file writing to speed up array indexing during recording of data
+- [ ] Automate data collection from Horizon servers
 - [ ] Write visualiser module
 - [ ] Use a higher order numerical integration scheme, like RK4
 - [ ] Extend to 3D
