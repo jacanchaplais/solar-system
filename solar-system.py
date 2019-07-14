@@ -80,8 +80,8 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
 
 # ------------------------------------------ SETTING UP THE LOOP VARIABLES ------------------------------------------- #
 # define the length of the calculation (in days), and the number of calculation steps to perform:
-timespan = 30200.0
-num_steps = 30200
+timespan = 60400.0
+num_steps = 60400
 time_change = timespan / float(num_steps) # the resulting time difference between each step
 
 # set up the variables to give progress readouts during execution:
