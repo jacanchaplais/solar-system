@@ -176,7 +176,8 @@ for step in range(1, num_steps):
     vel = np.dstack((vel, cur_vel))
     pos = np.dstack((pos, cur_pos))
 
-    # update the progress readout:
+
+# ----------------- WRITE TO OUTPUT FILE AND UPDATE PROGRESS ----------------- #
     cntr = cntr + 1
     last_step = step == num_steps - 1
     if (cntr == cntr_change or last_step):
