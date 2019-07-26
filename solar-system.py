@@ -6,9 +6,10 @@
 
 # This code takes input of the positions and velocities of all bodies
 # within a gravitationally interacting system and evolves them through
-# time. The program reads and writes in CSV format using Pandas.
-# Input data is provided in bodies.inp, output data is written to
-# data/traj.out
+# time.
+#
+# The program reads and writes in CSV format using Pandas. Input data
+# is provided in bodies.inp, output data is written to data/traj.out
 
 import os
 import sys
@@ -46,14 +47,14 @@ def accelerate(position, mass):
     """
     mass = mass[:, np.newaxis]  # formats as column vector
     
-    # subtracts position row vector from col vector, to form square
-    # antisymm. matrix of displacements D_ij, from body i to j
+    # Subtracts position row vector from col vector, to form square
+    # antisymm. matrix of displacements D_ij, from body i to j.
     displacement = position[:, np.newaxis] - position
     
-    # calc matrix of distance d_ij from displacement vectors in D_ij
+    # Calc matrix of distance d_ij from displacement vectors in D_ij.
     distance = np.linalg.norm(displacement, axis=2)
     
-    # calc matrix of (1 / d_ij) ^ 3, except where d_ij = 0
+    # Calc matrix of (1 / d_ij) ^ 3, except where d_ij = 0.
     inv_cube_dist = np.power(
         distance, -3, where=(distance != 0.0))
     
@@ -85,7 +86,7 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
     cur_traj -- the formatted DataFrame 
     """
     
-    # create a datetime array from start to finish:
+    # Create a datetime array from start to finish.
     date_range = cur_date + pd.to_timedelta(np.arange(num_iter), 'D') 
 
     body_order = index.levels[0][index.codes[0]]
@@ -105,8 +106,8 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
         inplace=True
     )
 
-    # reshapes 3d arrays of to 2d, making time axis add repeating rows:
-    # position
+    # Reshapes 3d arrays of to 2d, making time axis add repeating rows.
+    # position:
     pos_data = pos_data.transpose(2,0,1).reshape(  # moves t axis to front
             # rows are each body repeated for every timestep:
             pos_data.shape[0] * pos_data.shape[2],
@@ -120,7 +121,7 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
 
     traj_data = np.hstack((pos_data, vel_data))  # pos & vel data in adj cols
 
-    # puts it all together to actually create the dataframe:
+    # Puts it all together to create the DataFrame.
     cur_traj = pd.DataFrame(data=traj_data, index=index, columns=column)
     cur_traj.sort_index(inplace=True)
     cur_traj = cur_traj.reindex(body_order, level='Name')
@@ -129,12 +130,12 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
 
 
 # ---------------------- SETTING UP THE LOOP VARIABLES ----------------------- #
-# define length of the calc (in days), & the num of calc steps to perform:
+# Define length of the calc (days), & the num of calc steps to perform.
 timespan = 60400.0
 num_steps = 60400
 time_change = timespan / float(num_steps)  # resulting time diff between steps
 
-# set up the variables to give progress readouts during execution:
+# Set up the variables to give progress readouts during execution.
 cntr = 0
 pcnt = 0
 pcnt_change = 10  # (int) set how much change in % of calc for readout update
@@ -142,11 +143,12 @@ cntr_change = int((pcnt_change / 100.0) * num_steps)
 
 
 # -------- PREPARING THE PHYSICAL DATA STRUCTURES FROM THE INPUT FILE -------- #
-# the calc is in Numpy, formatted in Pandas after
+# The calculation is in Numpy, formatted in Pandas after.
 
 idx_slc = pd.IndexSlice  # a pandas object to make index slicing easier
 
-pos = traj.loc[idx_slc[:, start_date], ['X','Y']].values # get init pos 2D array
+# Get initial 2D arrays for position and velocity:
+pos = traj.loc[idx_slc[:, start_date], ['X','Y']].values
 vel = traj.loc[idx_slc[:, start_date], ['VX','VY']].values
 
 cur_pos = pos  # store 2D array of positions at first timestep, for calculations
@@ -159,7 +161,7 @@ mass = data['Mass'].values  # get the mass as a 1D array
 
 
 # ------------------- PERFORMING THE NUMERICAL INTEGRATION ------------------- #
-# creates a data/ storage directory, if it does not already exist:
+# Create a data/ storage directory, if it does not already exist.
 data_dir = 'data/'
 fpath = data_dir + 'traj.out'
 
@@ -170,11 +172,11 @@ elif (os.path.isfile(fpath)):
 
 
 for step in range(1, num_steps):
-    # apply euler method to calc new vels & pos:
+    # Apply euler method to calculate new velocities & positions.
     cur_vel = cur_vel + accelerate(cur_pos, mass) * time_change
     cur_pos = cur_pos + cur_vel * time_change
 
-    # record next 2D arrays of pos & vels along t axes of arrays:
+    # Record next 2D arrays of pos & vels along t axes of arrays.
     vel = np.dstack((vel, cur_vel))
     pos = np.dstack((pos, cur_pos))
 
@@ -187,7 +189,7 @@ for step in range(1, num_steps):
         sys.stdout.write('\r{}% complete'.format(pcnt))
         sys.stdout.flush()
         
-        # record all but the last data
+        # Record all but the last timestep of data.
         cur_date = start_date + pd.to_timedelta(step - cntr, 'D')
         
         if not last_step:
@@ -208,6 +210,6 @@ for step in range(1, num_steps):
         write_mode = 'a' if file_exists else 'w'  # if store file exists, append
 
         with open(fpath, write_mode) as f: # save as csv
-            cur_traj.to_csv(f, header=(not file_exists))  # write to data file
+            cur_traj.to_csv(f, header=(not file_exists))
 
         cntr = 0
