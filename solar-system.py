@@ -10,9 +10,11 @@
 # Input data is provided in bodies.inp, output data is written to
 # data/traj.out
 
+import os
+import sys
+
 import numpy as np
 import pandas as pd
-import sys, os
 
 
 # ----------------------- DEFINING ASTRONOMICAL UNITS ------------------------ #
