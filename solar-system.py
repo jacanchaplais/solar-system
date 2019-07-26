@@ -1,5 +1,14 @@
-# astronomical data obtained from NASA Horizons server:
-# https://ssd.jpl.nasa.gov/horizons.cgi?CGISESSID=0be6725975911d33c2020b132ee1a912&s_disp=1#top
+################################################################################
+##                           Solar System Simulation                          ##
+##                       Written by Jacan Chaplais, 2019                      ##
+##                          jacan.chaplais@gmail.com                          ##
+################################################################################
+
+# This code takes input of the positions and velocities of all bodies
+# within a gravitationally interacting system and evolves them through
+# time. The program reads and writes in CSV format using Pandas.
+# Input data is provided in bodies.inp, output data is written to
+# data/traj.out
 
 import numpy as np
 import pandas as pd
