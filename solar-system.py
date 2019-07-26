@@ -25,11 +25,11 @@ grav_const = 6.67408E-11 * (au_mass * au_time ** 2) / (au_len ** 3)
 
 # ------------------------ READING SOLAR SYSTEM DATA ------------------------- #
 data = pd.read_csv('bodies.inp', index_col=[0,1], parse_dates=True)
-traj = data.drop(columns=['Mass','Z', 'VZ']) # DataFrame to stores calcs
+traj = data.drop(columns=['Mass','Z', 'VZ'])  # DataFrame to stores calcs
 
 index = traj.index.copy()
 columns = traj.columns.copy()
-start_date = index.levels[1][0] # first date from input file
+start_date = index.levels[1][0]  # first date from input file
 
 
 # ------- CALCULATING THE ACCELERATIONS OF THESE BODIES DUE TO GRAVITY ------- #
@@ -44,7 +44,7 @@ def accelerate(position, mass):
     Returns:
     (n x 2 array) n rows of 2-dimensional acceleration for each body
     """
-    mass = mass[:, np.newaxis] # formats as column vector
+    mass = mass[:, np.newaxis]  # formats as column vector
     
     # subtracts position row vector from col vector, to form square
     # antisymm. matrix of displacements D_ij, from body i to j
@@ -90,24 +90,24 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
 
     body_order = index.levels[0][index.codes[0]]
 
-    index.set_levels(date_range, level=1, inplace=True) # set dates of new index
+    index.set_levels(date_range, level=1, inplace=True)  # set dates new index
     index.set_codes(
         [
-            np.tile( # map planet name to number
+            np.tile(  # map planet name to number
                 index.codes[0],
                 num_iter),
                 
-            np.repeat( # apply date to planets at each timestep
+            np.repeat(  # apply date to planets at each timestep
                 np.arange(num_iter),
                 len(index.codes[1]))
         ],
-        verify_integrity=False, # allow index to be erroneous for now
-        inplace=True # change index in place
+        verify_integrity=False,  # allow index to be erroneous for now
+        inplace=True
     )
 
     # reshapes 3d arrays of to 2d, making time axis add repeating rows:
     # position
-    pos_data = pos_data.transpose(2,0,1).reshape( # moves t axis to front
+    pos_data = pos_data.transpose(2,0,1).reshape(  # moves t axis to front
             # rows are each body repeated for every timestep:
             pos_data.shape[0] * pos_data.shape[2],
             # columns give x & y pos for each body:
@@ -118,7 +118,7 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
             vel_data.shape[0] * vel_data.shape[2],
             vel_data.shape[1])
 
-    traj_data = np.hstack((pos_data, vel_data)) # pos & vel data in adj cols
+    traj_data = np.hstack((pos_data, vel_data))  # pos & vel data in adj cols
 
     # puts it all together to actually create the dataframe:
     cur_traj = pd.DataFrame(data=traj_data, index=index, columns=column)
@@ -132,30 +132,30 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
 # define length of the calc (in days), & the num of calc steps to perform:
 timespan = 60400.0
 num_steps = 60400
-time_change = timespan / float(num_steps) # resulting time diff between steps
+time_change = timespan / float(num_steps)  # resulting time diff between steps
 
 # set up the variables to give progress readouts during execution:
 cntr = 0
 pcnt = 0
-pcnt_change = 10 # (int) set how much change in % of calc for readout update
+pcnt_change = 10  # (int) set how much change in % of calc for readout update
 cntr_change = int((pcnt_change / 100.0) * num_steps)
 
 
 # -------- PREPARING THE PHYSICAL DATA STRUCTURES FROM THE INPUT FILE -------- #
 # the calc is in Numpy, formatted in Pandas after
 
-idx_slc = pd.IndexSlice # a pandas object to make index slicing easier
+idx_slc = pd.IndexSlice  # a pandas object to make index slicing easier
 
 pos = traj.loc[idx_slc[:, start_date], ['X','Y']].values # get init pos 2D array
 vel = traj.loc[idx_slc[:, start_date], ['VX','VY']].values
 
-cur_pos = pos # store 2D array of positions at first timestep, for calculations
+cur_pos = pos  # store 2D array of positions at first timestep, for calculations
 cur_vel = vel
 
-pos = pos[:, :, np.newaxis] # add a time axis, for recording
+pos = pos[:, :, np.newaxis]  # add a time axis, for recording
 vel = vel[:, :, np.newaxis]
 
-mass = data['Mass'].values # get the mass as a 1D array
+mass = data['Mass'].values  # get the mass as a 1D array
 
 
 # ------------------- PERFORMING THE NUMERICAL INTEGRATION ------------------- #
@@ -205,9 +205,9 @@ for step in range(1, num_steps):
                 cntr_change, cur_date)
         
         file_exists = os.path.isfile(fpath)
-        write_mode = 'a' if file_exists else 'w' # if store file exists, append
+        write_mode = 'a' if file_exists else 'w'  # if store file exists, append
 
         with open(fpath, write_mode) as f: # save as csv
-            cur_traj.to_csv(f, header=(not file_exists)) # write to data file
+            cur_traj.to_csv(f, header=(not file_exists))  # write to data file
 
         cntr = 0
