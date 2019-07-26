@@ -116,6 +116,7 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
     
     return cur_traj
 
+
 # ---------------------- SETTING UP THE LOOP VARIABLES ----------------------- #
 # define length of the calc (in days), & the num of calc steps to perform:
 timespan = 60400.0
