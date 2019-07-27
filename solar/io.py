@@ -1,8 +1,29 @@
 """
 """
 
+import os
+import sys
+
 import numpy as np
 import pandas as pd
+
+
+def read(fname):
+    return pd.read_csv(fname, index_col=[0,1], parse_dates=True)
+
+
+def write(fpath, data):
+    file_exists = os.path.isfile(fpath)
+    write_mode = 'a' if file_exists else 'w'  # if store file exist, append
+
+    with open(fpath, write_mode) as f: # save as csv
+        data.to_csv(f, header=(not file_exists))
+
+
+def display_progress(last_step, cntr, cntr_change, pcnt):
+    if (cntr == cntr_change or last_step):
+        sys.stdout.write('\r{}% complete'.format(pcnt))
+        sys.stdout.flush()
 
 # --------------------------- FORMATTING THE DATA --------------------------- #
 def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
