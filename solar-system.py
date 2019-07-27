@@ -61,8 +61,7 @@ def accelerate(position, mass):
     inv_cube_dist = inv_cube_dist[:, :, np.newaxis]
 
     acc = - grav_const * np.sum(
-        inv_cube_dist * np.swapaxes(
-            mass * displacement, 0, 1),
+        inv_cube_dist * np.swapaxes(mass * displacement, 0, 1),
         axis=0)
     
     return acc
