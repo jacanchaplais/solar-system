@@ -1,8 +1,8 @@
-################################################################################
-##                           Solar System Simulation                          ##
-##                       Written by Jacan Chaplais, 2019                      ##
-##                          jacan.chaplais@gmail.com                          ##
-################################################################################
+###############################################################################
+##                          Solar System Simulation                          ##
+##                      Written by Jacan Chaplais, 2019                      ##
+##                         jacan.chaplais@gmail.com                          ##
+###############################################################################
 
 # This code takes input of the positions and velocities of all bodies
 # within a gravitationally interacting system and evolves them through
@@ -18,13 +18,13 @@ import numpy as np
 import pandas as pd
 
 
-# ----------------------- DEFINING ASTRONOMICAL UNITS ------------------------ #
+# ----------------------- DEFINING ASTRONOMICAL UNITS ----------------------- #
 # metres, kilograms, seconds:
 au_len, au_mass, au_time = 1.495978707E+11, 1.98892E+30, 8.64E+4
 grav_const = 6.67408E-11 * (au_mass * au_time ** 2) / (au_len ** 3)
 
 
-# ------------------------ READING SOLAR SYSTEM DATA ------------------------- #
+# ------------------------ READING SOLAR SYSTEM DATA ------------------------ #
 data = pd.read_csv('bodies.inp', index_col=[0,1], parse_dates=True)
 traj = data.drop(columns=['Mass','Z', 'VZ'])  # DataFrame to stores calcs
 
@@ -33,7 +33,7 @@ columns = traj.columns.copy()
 start_date = index.levels[1][0]  # first date from input file
 
 
-# ------- CALCULATING THE ACCELERATIONS OF THESE BODIES DUE TO GRAVITY ------- #
+# ------- CALCULATING THE ACCELERATIONS OF THESE BODIES DUE TO GRAVITY ------ #
 def accelerate(position, mass):
     """Calculates the cumulative Newtonian gravitational acceleration
     exerted on all n bodies within the system.
@@ -68,7 +68,7 @@ def accelerate(position, mass):
     return acc
 
 
-# ---------------------------- FORMATTING THE DATA --------------------------- #
+# --------------------------- FORMATTING THE DATA --------------------------- #
 def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
     """Takes position and velocity arrays of shape nbod x ndim x nt
     (bodies, spatial dimensions, time) and returns a DataFrame of the
@@ -129,7 +129,7 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
     return cur_traj
 
 
-# ---------------------- SETTING UP THE LOOP VARIABLES ----------------------- #
+# ---------------------- SETTING UP THE LOOP VARIABLES ---------------------- #
 # Define length of the calc (days), & the num of calc steps to perform.
 timespan = 60400.0
 num_steps = 60400
@@ -142,7 +142,7 @@ pcnt_change = 10  # (int) set how much change in % of calc for readout update
 cntr_change = int((pcnt_change / 100.0) * num_steps)
 
 
-# -------- PREPARING THE PHYSICAL DATA STRUCTURES FROM THE INPUT FILE -------- #
+# -------- PREPARING THE PHYSICAL DATA STRUCTURES FROM THE INPUT FILE ------- #
 # The calculation is in Numpy, formatted in Pandas after.
 
 idx_slc = pd.IndexSlice  # a pandas object to make index slicing easier
@@ -151,7 +151,7 @@ idx_slc = pd.IndexSlice  # a pandas object to make index slicing easier
 pos = traj.loc[idx_slc[:, start_date], ['X','Y']].values
 vel = traj.loc[idx_slc[:, start_date], ['VX','VY']].values
 
-cur_pos = pos  # store 2D array of positions at first timestep, for calculations
+cur_pos = pos  # store 2D array of pos at first timestep, for calcs
 cur_vel = vel
 
 pos = pos[:, :, np.newaxis]  # add a time axis, for recording
@@ -160,7 +160,7 @@ vel = vel[:, :, np.newaxis]
 mass = data['Mass'].values  # get the mass as a 1D array
 
 
-# ------------------- PERFORMING THE NUMERICAL INTEGRATION ------------------- #
+# ------------------- PERFORMING THE NUMERICAL INTEGRATION ------------------ #
 # Create a data/ storage directory, if it does not already exist.
 data_dir = 'data/'
 fpath = data_dir + 'traj.out'
@@ -181,7 +181,7 @@ for step in range(1, num_steps):
     pos = np.dstack((pos, cur_pos))
 
 
-# ----------------- WRITE TO OUTPUT FILE AND UPDATE PROGRESS ----------------- #
+# ----------------- WRITE TO OUTPUT FILE AND UPDATE PROGRESS ---------------- #
     cntr = cntr + 1
     last_step = step == num_steps - 1
     if (cntr == cntr_change or last_step):
@@ -207,7 +207,7 @@ for step in range(1, num_steps):
                 cntr_change, cur_date)
         
         file_exists = os.path.isfile(fpath)
-        write_mode = 'a' if file_exists else 'w'  # if store file exists, append
+        write_mode = 'a' if file_exists else 'w'  # if store file exist, append
 
         with open(fpath, write_mode) as f: # save as csv
             cur_traj.to_csv(f, header=(not file_exists))
