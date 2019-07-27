@@ -17,16 +17,11 @@ import sys
 import numpy as np
 import pandas as pd
 
-from solar import io
-
-# ----------------------- DEFINING ASTRONOMICAL UNITS ----------------------- #
-# metres, kilograms, seconds:
-au_len, au_mass, au_time = 1.495978707E+11, 1.98892E+30, 8.64E+4
-grav_const = 6.67408E-11 * (au_mass * au_time ** 2) / (au_len ** 3)
+from solar import io, config, algo
 
 
 # ------------------------ READING SOLAR SYSTEM DATA ------------------------ #
-data = pd.read_csv('bodies.inp', index_col=[0,1], parse_dates=True)
+data = io.read('bodies.inp')
 traj = data.drop(columns=['Mass','Z', 'VZ'])  # DataFrame to stores calcs
 
 index = traj.index.copy()
@@ -61,7 +56,7 @@ def accelerate(position, mass):
     
     inv_cube_dist = inv_cube_dist[:, :, np.newaxis]
 
-    acc = - grav_const * np.sum(
+    acc = - config.GRAV_CONST * np.sum(
         inv_cube_dist * np.swapaxes(mass * displacement, 0, 1),
         axis=0)
     
@@ -123,11 +118,11 @@ for step in range(1, num_steps):
 # ----------------- WRITE TO OUTPUT FILE AND UPDATE PROGRESS ---------------- #
     cntr = cntr + 1
     last_step = step == num_steps - 1
+    
+    io.display_progress(last_step, cntr, cntr_change, pcnt)
+    
     if (cntr == cntr_change or last_step):
         pcnt = pcnt + pcnt_change
-        sys.stdout.write('\r{}% complete'.format(pcnt))
-        sys.stdout.flush()
-        
         # Record all but the last timestep of data.
         cur_date = start_date + pd.to_timedelta(step - cntr, 'D')
         
@@ -145,10 +140,6 @@ for step in range(1, num_steps):
                 index.copy(), columns,
                 cntr_change, cur_date)
         
-        file_exists = os.path.isfile(fpath)
-        write_mode = 'a' if file_exists else 'w'  # if store file exist, append
-
-        with open(fpath, write_mode) as f: # save as csv
-            cur_traj.to_csv(f, header=(not file_exists))
+        io.write(fpath, cur_traj)
 
         cntr = 0
