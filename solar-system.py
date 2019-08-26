@@ -1,7 +1,7 @@
 ###############################################################################
-##                          Solar System Simulation                          ##
-##                      Written by Jacan Chaplais, 2019                      ##
-##                         jacan.chaplais@gmail.com                          ##
+#                          Solar System Simulation                            #
+#                      Written by Jacan Chaplais, 2019                        #
+#                         jacan.chaplais@gmail.com                            #
 ###############################################################################
 
 # This code takes input of the positions and velocities of all bodies
@@ -85,13 +85,16 @@ idx_slc = pd.IndexSlice  # a pandas object to make index slicing easier
 pos = traj.loc[idx_slc[:, start_date], ['X','Y']].values
 vel = traj.loc[idx_slc[:, start_date], ['VX','VY']].values
 
-cur_pos = pos  # store 2D array of pos at first timestep, for calcs
+# store 2D array of pos at first timestep, for calcs
+cur_pos = pos
 cur_vel = vel
 
-pos = pos[:, :, np.newaxis]  # add a time axis, for recording
+# add a time axis, for recording
+pos = pos[:, :, np.newaxis]
 vel = vel[:, :, np.newaxis]
 
-mass = data['Mass'].values  # get the mass as a 1D array
+# get the mass as a 1D array
+mass = data['Mass'].values
 
 
 # ------------------- PERFORMING THE NUMERICAL INTEGRATION ------------------ #
