@@ -29,40 +29,6 @@ columns = traj.columns.copy()
 start_date = index.levels[1][0]  # first date from input file
 
 
-# ------- CALCULATING THE ACCELERATIONS OF THESE BODIES DUE TO GRAVITY ------ #
-def accelerate(position, mass):
-    """Calculates the cumulative Newtonian gravitational acceleration
-    exerted on all n bodies within the system.
-    
-    Keyword arguments:
-    position -- (n x 2 array) n rows of 2d position for each body
-    mass -- (1-d array of length n) containing the masses of each body
-    
-    Returns:
-    (n x 2 array) n rows of 2-dimensional acceleration for each body
-    """
-    mass = mass[:, np.newaxis]  # formats as column vector
-    
-    # Subtracts position row vector from col vector, to form square
-    # antisymm. matrix of displacements D_ij, from body i to j.
-    displacement = position[:, np.newaxis] - position
-    
-    # Calc matrix of distance d_ij from displacement vectors in D_ij.
-    distance = np.linalg.norm(displacement, axis=2)
-    
-    # Calc matrix of (1 / d_ij) ^ 3, except where d_ij = 0.
-    inv_cube_dist = np.power(
-        distance, -3, where=(distance != 0.0))
-    
-    inv_cube_dist = inv_cube_dist[:, :, np.newaxis]
-
-    acc = - config.GRAV_CONST * np.sum(
-        inv_cube_dist * np.swapaxes(mass * displacement, 0, 1),
-        axis=0)
-    
-    return acc
-
-
 # ---------------------- SETTING UP THE LOOP VARIABLES ---------------------- #
 # Define length of the calc (days), & the num of calc steps to perform.
 timespan = 60400.0
@@ -110,7 +76,7 @@ elif (os.path.isfile(fpath)):
 
 for step in range(1, num_steps):
     # Apply euler method to calculate new velocities & positions.
-    cur_vel = cur_vel + accelerate(cur_pos, mass) * time_change
+    cur_vel = cur_vel + algo.accelerate(cur_pos, mass) * time_change
     cur_pos = cur_pos + cur_vel * time_change
 
     # Record next 2D arrays of pos & vels along t axes of arrays.

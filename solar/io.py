@@ -9,7 +9,7 @@ import pandas as pd
 
 
 def read(fname):
-    return pd.read_csv(fname, index_col=[0,1], parse_dates=True)
+    return pd.read_csv(fname, index_col=[0, 1], parse_dates=True)
 
 
 def write(fpath, data):
@@ -65,14 +65,14 @@ def format_data(pos_data, vel_data, index, column, num_iter, cur_date):
 
     # Reshapes 3d arrays of to 2d, making time axis add repeating rows.
     # position:
-    pos_data = pos_data.transpose(2,0,1).reshape(  # moves t axis to front
+    pos_data = pos_data.transpose(2, 0, 1).reshape(  # moves t axis to front
             # rows are each body repeated for every timestep:
             pos_data.shape[0] * pos_data.shape[2],
             # columns give x & y pos for each body:
             pos_data.shape[1])
     
     # same for velocity:
-    vel_data = vel_data.transpose(2,0,1).reshape(
+    vel_data = vel_data.transpose(2, 0, 1).reshape(
             vel_data.shape[0] * vel_data.shape[2],
             vel_data.shape[1])
 
