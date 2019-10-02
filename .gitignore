@@ -83,3 +83,5 @@ target/
 
 *.cpython*
 settings.json
+
+*.swp
